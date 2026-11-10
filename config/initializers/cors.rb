@@ -41,6 +41,9 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
       resource '/smartworkrd/sso/consume',
                headers: :any,
                methods: [:post, :options]
+      resource '/smartworkrd/inbox/config',
+               headers: :any,
+               methods: [:get, :options]
     end
 
     chatwoot_frontend_origin = ENV.fetch('FRONTEND_URL', '').strip.sub(%r{/\z}, '')
