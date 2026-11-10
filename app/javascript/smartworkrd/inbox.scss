@@ -91,11 +91,11 @@
   font-family: inherit !important;
 }
 
-[data-smartworkrd-inbox-root] :is(.bg-n-brand, .hover\\:bg-n-brand:hover) {
+[data-smartworkrd-inbox-root] :is(.bg-n-brand) {
   background-color: #202C28 !important;
 }
 
-[data-smartworkrd-inbox-root] :is(.text-n-brand, .hover\\:text-n-brand:hover) {
+[data-smartworkrd-inbox-root] :is(.text-n-brand) {
   color: #202C28 !important;
 }
 
