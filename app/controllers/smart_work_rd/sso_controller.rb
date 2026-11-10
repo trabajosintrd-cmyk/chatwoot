@@ -5,7 +5,8 @@ module SmartWorkRd
 
     skip_before_action :set_current_user
     before_action :set_no_store_headers
-    before_action :verify_smartworkrd_origin!
+    before_action :verify_smartworkrd_origin!, only: :consume
+    before_action :verify_smartworkrd_service_request!, only: :revoke
 
     def consume
       claims = validated_ticket_claims(decode_ticket(params.require(:ticket)))
@@ -24,6 +25,24 @@ module SmartWorkRd
       render json: { error: 'El usuario no tiene permisos para esta cuenta de Chatwoot.' }, status: :forbidden
     rescue JWT::DecodeError, KeyError, ArgumentError, ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
       render json: { error: 'El ticket SSO no es válido, ya fue utilizado o ha expirado.' }, status: :unauthorized
+    end
+
+    def revoke
+      account_id = Integer(params.require(:account_id).to_s, 10)
+      user_id = Integer(params.require(:user_id).to_s, 10)
+      account_user = AccountUser.find_by(account_id: account_id, user_id: user_id)
+
+      if account_user
+        user = account_user.user
+        account_user.destroy!
+        user.update!(tokens: {})
+      end
+
+      render json: { revoked: true }, status: :ok
+    rescue ActionController::ParameterMissing, ArgumentError
+      render json: { error: 'Se requiere un account_id y user_id numéricos.' }, status: :bad_request
+    rescue ActiveRecord::RecordInvalid
+      render json: { error: 'No se pudo revocar el acceso de Chatwoot.' }, status: :unprocessable_entity
     end
 
     private
@@ -122,6 +141,18 @@ module SmartWorkRd
     def set_no_store_headers
       response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
       response.headers['Pragma'] = 'no-cache'
+    end
+
+    def verify_smartworkrd_service_request!
+      secret = ENV['SMARTWORKRD_SSO_SECRET'].to_s
+      provided = request.headers['Authorization'].to_s.delete_prefix('Bearer ')
+
+      authorized = secret.bytesize >= 32 &&
+                   provided.bytesize == secret.bytesize &&
+                   ActiveSupport::SecurityUtils.secure_compare(provided, secret)
+      return if authorized
+
+      render json: { error: 'Credenciales de servicio no válidas.' }, status: :unauthorized
     end
 
     def verify_smartworkrd_origin!
