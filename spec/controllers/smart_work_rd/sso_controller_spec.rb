@@ -105,6 +105,16 @@ RSpec.describe 'Smart Work RD SSO', type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
 
+    it 'rejects a Chatwoot user who belongs to more than one account' do
+      other_account = create(:account)
+      create(:account_user, account: other_account, user: agent, role: :agent)
+
+      consume(build_ticket(user: agent, account: account))
+
+      expect(response).to have_http_status(:forbidden)
+    end
+
+
     it 'rejects a CRM administrator mapped to a Chatwoot agent account' do
       consume(
         build_ticket(
