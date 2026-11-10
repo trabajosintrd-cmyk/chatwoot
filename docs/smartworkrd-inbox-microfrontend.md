@@ -53,7 +53,7 @@ El endpoint Chatwoot valida:
 
 Al consumirlo, Chatwoot crea una credencial Devise Token Auth y devuelve los headers en una respuesta JSON `no-store`. La tabla `smart_work_rd_sso_tickets` registra el `jti` consumido y bloquea replays.
 
-El CRM mantiene los vínculos tenant-scoped entre tenant, cuenta Chatwoot y usuario externo. La identidad externa de usuario es única globalmente: no se puede reutilizar el mismo ID de Chatwoot en tenants distintos. Cambiar la cuenta elimina los vínculos de usuario anteriores. La UI de Integraciones permite configurar la cuenta y el usuario actual; el resto de los miembros debe vincularse individualmente antes de acceder.
+El CRM mantiene los vínculos business-scoped entre negocio, cuenta Chatwoot y usuario externo. Cada negocio utiliza una cuenta Chatwoot independiente. La identidad externa de usuario es única globalmente: no se puede reutilizar el mismo ID de Chatwoot en tenants distintos. Cambiar la cuenta elimina los vínculos de usuario anteriores. La UI de Integraciones permite configurar la cuenta y el usuario actual; el resto de los miembros debe vincularse individualmente antes de acceder.
 
 ## Variables de entorno
 
