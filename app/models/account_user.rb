@@ -46,6 +46,8 @@ class AccountUser < ApplicationRecord
 
   validates :user_id, uniqueness: { scope: :account_id }
   validate :accepts_conversations_or_calls
+  validate :smartworkrd_user_must_belong_to_one_account, if: :smartworkrd_single_account_mode?
+
 
   def create_notification_setting
     setting = user.notification_settings.new(account_id: account.id)
@@ -99,6 +101,17 @@ class AccountUser < ApplicationRecord
 
   def dispatch_account_cache_invalidated
     Rails.configuration.dispatcher.dispatch(ACCOUNT_CACHE_INVALIDATED, Time.zone.now, account: account, cache_keys: account.cache_keys)
+  end
+
+  def smartworkrd_single_account_mode?
+    ENV['SMARTWORKRD_ALLOWED_ORIGIN'].present? && user_id.present? && account_id.present?
+  end
+
+  def smartworkrd_user_must_belong_to_one_account
+    other_account_membership = self.class.where(user_id: user_id).where.not(account_id: account_id)
+    return unless other_account_membership.exists?
+
+    errors.add(:user_id, 'is already assigned to another Chatwoot account for Smart Work RD SSO')
   end
 
   def accepts_conversations_or_calls
