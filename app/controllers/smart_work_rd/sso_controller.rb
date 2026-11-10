@@ -22,7 +22,7 @@ module SmartWorkRd
       render json: { error: 'La autenticación SSO no está configurada en Chatwoot.' }, status: :service_unavailable
     rescue SsoForbiddenError
       render json: { error: 'El usuario no tiene permisos para esta cuenta de Chatwoot.' }, status: :forbidden
-    rescue JWT::DecodeError, KeyError, ArgumentError, ActiveRecord::RecordNotUnique
+    rescue JWT::DecodeError, KeyError, ArgumentError, ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
       render json: { error: 'El ticket SSO no es válido, ya fue utilizado o ha expirado.' }, status: :unauthorized
     end
 
