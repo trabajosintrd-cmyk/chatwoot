@@ -72,7 +72,7 @@ En Chatwoot:
 - `ENABLE_API_CORS=true`.
 - `FORCE_SSL=true` en producción.
 
-CORS de assets permite cargar Vite desde el host; la ruta de configuración y el endpoint SSO solo aceptan el origen CRM. CORS de API queda limitado al origen CRM y Action Cable admite el origen CRM y el propio origen Chatwoot. No se usa cookie compartida entre subdominios: el host guarda la credencial Chatwoot en su propio origen para que el entrypoint pueda leerla y añadir headers a las solicitudes API.
+CORS de assets permite cargar Vite desde el host; la ruta de configuración y el endpoint SSO solo aceptan el origen CRM. CORS de API y `/rails/active_storage/*` queda limitado al origen CRM; Action Cable admite el origen CRM y el propio origen Chatwoot. Si Active Storage usa S3 u otro object storage, su bucket también debe permitir el origen CRM para los PUT/GET firmados. No se usa cookie compartida entre subdominios: el host guarda la credencial Chatwoot en su propio origen para que el entrypoint pueda leerla y añadir headers a las solicitudes API.
 
 ## Pendiente antes de producción
 
