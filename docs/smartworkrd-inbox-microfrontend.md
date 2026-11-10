@@ -17,6 +17,7 @@ Implementación aislada en la rama `smartworkrd/inbox-microfrontend-spike`, basa
 - Estilos scoped para el mount point, utilidades Tailwind y tokens de Smart Work RD.
 - Paleta primaria verde bosque y tema claro; la shell CRM conserva el control del tema.
 - Endpoint `POST /smartworkrd/sso/consume` para tickets firmados de un solo uso.
+- Endpoint server-to-server `POST /smartworkrd/sso/revoke`, protegido por el mismo secreto compartido, que elimina la membresía de cuenta y revoca los tokens Devise existentes.
 
 ## Contrato visual
 
@@ -53,11 +54,12 @@ El endpoint Chatwoot valida:
 
 Al consumirlo, Chatwoot crea una credencial Devise Token Auth y devuelve los headers en una respuesta JSON `no-store`. La tabla `smart_work_rd_sso_tickets` registra el `jti` consumido y bloquea replays.
 
-El CRM mantiene los vínculos business-scoped entre negocio, cuenta Chatwoot y usuario externo. Cada negocio utiliza una cuenta Chatwoot independiente. La identidad externa de usuario es única globalmente: no se puede reutilizar el mismo ID de Chatwoot entre negocios. Cambiar la cuenta elimina los vínculos de usuario anteriores. La UI de Integraciones permite configurar la cuenta y el usuario actual; el resto de los miembros debe vincularse individualmente antes de acceder. Una persona que trabaja en varios negocios necesita una identidad Chatwoot distinta por cada cuenta.
+El CRM mantiene los vínculos business-scoped entre negocio, cuenta Chatwoot y usuario externo. Cada negocio utiliza una cuenta Chatwoot independiente. La identidad externa de usuario es única globalmente: no se puede reutilizar el mismo ID de Chatwoot entre negocios. Cambiar la cuenta revoca primero las membresías y sesiones anteriores. La UI de Integraciones permite configurar la cuenta y vincular, actualizar o retirar la identidad de cada miembro con acceso al negocio. Una persona que trabaja en varios negocios necesita una identidad Chatwoot distinta por cada cuenta. Al retirar un miembro o degradarlo a solo lectura, el CRM llama al endpoint de revocación antes de eliminar el vínculo.
 
 ## Variables de entorno
 
 En la API CRM:
+- `CHATWOOT_BASE_URL`: origen HTTPS del servidor Chatwoot, sin slash final.
 - `CHATWOOT_SSO_SECRET`: secreto aleatorio de al menos 32 bytes.
 - `CHATWOOT_SSO_ISSUER=smartworkrd-crm`.
 - `CHATWOOT_SSO_AUDIENCE=chatwoot`.
@@ -80,7 +82,8 @@ CORS de assets permite cargar Vite desde el host; la ruta de configuración y el
 - Prueba de replay, ticket expirado, origen no autorizado y roles incompatibles.
 - Prueba de aislamiento con dos tenants y dos cuentas Chatwoot.
 - CSP y dominios finales del despliegue.
-- Provisionamiento automatizado de cuentas/usuarios y pantalla de mapeo para todos los miembros.
+- Provisionamiento automatizado de cuentas y usuarios Chatwoot; por ahora los IDs externos se crean y asignan manualmente.
+- Validar la revocación server-to-server de membresía y tokens en staging, incluida la eliminación de miembros desde el panel de equipo.
 - Verificación visual y responsive en staging.
 
 No conectar tráfico real ni activar el feature flag hasta superar esas pruebas.
