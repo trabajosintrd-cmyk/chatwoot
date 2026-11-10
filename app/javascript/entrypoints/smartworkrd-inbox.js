@@ -1,4 +1,4 @@
-import { createApp } from 'vue';
+import { createApp, toRaw } from 'vue';
 import { createMemoryHistory, createRouter } from 'vue-router';
 import { createI18n } from 'vue-i18n';
 import axios from 'axios';
@@ -44,6 +44,14 @@ let mounting = false;
 let previousGlobalAxios;
 let previousWootConstants;
 let chatwootAxiosInstance;
+
+// The Vuex store is a module singleton in the upstream dashboard. Keep a clean
+// baseline so one tenant's conversations, contacts and account data never bleed
+// into the next embedded inbox mount.
+const initialStoreState = structuredClone(toRaw(store.state));
+const resetStoreState = () => {
+  store.replaceState(structuredClone(initialStoreState));
+};
 
 const initializeGlobalHelpers = () => {
   if (!globalHelpersInitialized) {
@@ -174,7 +182,7 @@ export const unmountSmartWorkInbox = element => {
   activeInstance.actionCable?.disconnect();
   activeInstance.app.unmount();
   activeInstance.unsync?.();
-  store.dispatch('clearSelectedState');
+  resetStoreState();
   restoreGlobalHelpers();
 
   if (window.reconnectService === activeInstance.reconnectService) {
@@ -212,6 +220,7 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
   let reconnectService;
 
   try {
+    resetStoreState();
     initializeGlobalHelpers();
     await store.dispatch('setUser');
 
@@ -289,6 +298,7 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
     actionCable?.disconnect();
     app?.unmount();
     unsync?.();
+    resetStoreState();
     restoreGlobalHelpers();
     throw error;
   } finally {
