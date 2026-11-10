@@ -1,5 +1,7 @@
 module SmartWorkRd
   class InboxController < DashboardController
+    skip_before_action :ensure_html_format, only: :config
+
     def assets
       response.headers['Cache-Control'] = 'public, max-age=300'
       render layout: false
