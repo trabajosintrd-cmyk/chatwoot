@@ -41,6 +41,9 @@ import '@chatwoot/viz/style.css';
 let globalHelpersInitialized = false;
 let activeInstance = null;
 let mounting = false;
+let previousGlobalAxios;
+let previousWootConstants;
+let chatwootAxiosInstance;
 
 const initializeGlobalHelpers = () => {
   if (!globalHelpersInitialized) {
@@ -50,8 +53,33 @@ const initializeGlobalHelpers = () => {
     globalHelpersInitialized = true;
   }
 
+  previousGlobalAxios = window.axios;
+  previousWootConstants = window.WootConstants;
   window.WootConstants = constants;
-  window.axios = createAxios(axios);
+  chatwootAxiosInstance = createAxios(axios);
+  window.axios = chatwootAxiosInstance;
+};
+
+const restoreGlobalHelpers = () => {
+  if (window.axios === chatwootAxiosInstance) {
+    if (previousGlobalAxios === undefined) {
+      delete window.axios;
+    } else {
+      window.axios = previousGlobalAxios;
+    }
+  }
+
+  if (window.WootConstants === constants) {
+    if (previousWootConstants === undefined) {
+      delete window.WootConstants;
+    } else {
+      window.WootConstants = previousWootConstants;
+    }
+  }
+
+  previousGlobalAxios = undefined;
+  previousWootConstants = undefined;
+  chatwootAxiosInstance = undefined;
 };
 
 const getRequestedAccountId = (options, user) => {
@@ -147,6 +175,7 @@ export const unmountSmartWorkInbox = element => {
   activeInstance.app.unmount();
   activeInstance.unsync?.();
   store.dispatch('clearSelectedState');
+  restoreGlobalHelpers();
 
   if (window.reconnectService === activeInstance.reconnectService) {
     delete window.reconnectService;
@@ -260,6 +289,7 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
     actionCable?.disconnect();
     app?.unmount();
     unsync?.();
+    restoreGlobalHelpers();
     throw error;
   } finally {
     mounting = false;
