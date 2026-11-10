@@ -107,7 +107,7 @@ RSpec.describe 'Smart Work RD SSO', type: :request do
 
     it 'rejects a Chatwoot user who belongs to more than one account' do
       other_account = create(:account)
-      create(:account_user, account: other_account, user: agent, role: :agent)
+      build(:account_user, account: other_account, user: agent, role: :agent).save!(validate: false)
 
       consume(build_ticket(user: agent, account: account))
 
