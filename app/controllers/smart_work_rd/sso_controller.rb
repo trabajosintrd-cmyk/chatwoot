@@ -85,7 +85,7 @@ module SmartWorkRd
       )
       expected_role = %w[owner admin].include?(claims.fetch(:crm_role)) ? 'administrator' : 'agent'
 
-      unless account && user&.active_for_authentication? &&
+      unless account&.active? && user&.active_for_authentication? &&
              account_user&.role == expected_role
         raise SsoForbiddenError
       end
