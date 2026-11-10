@@ -49,7 +49,7 @@ El endpoint Chatwoot valida:
 - Ticket con `jti` único y no reutilizado.
 - Rol CRM permitido: owner, admin, supervisor o agent.
 - Usuario Chatwoot activo, miembro de la cuenta indicada y con rol compatible.
-- Cada usuario Chatwoot debe pertenecer a una sola cuenta: Devise Token Auth genera credenciales a nivel de usuario, no de cuenta. Así, el token no puede abrir la cuenta de otro tenant.
+- Cada usuario Chatwoot debe pertenecer a una sola cuenta: Devise Token Auth genera credenciales a nivel de usuario, no de cuenta. El endpoint SSO rechaza usuarios con varias membresías y, cuando `SMARTWORKRD_ALLOWED_ORIGIN` está configurado, el modelo `AccountUser` impide añadir una segunda cuenta a un usuario. Los usuarios preexistentes con varias cuentas deben corregirse antes de vincularlos.
 
 Al consumirlo, Chatwoot crea una credencial Devise Token Auth y devuelve los headers en una respuesta JSON `no-store`. La tabla `smart_work_rd_sso_tickets` registra el `jti` consumido y bloquea replays.
 
