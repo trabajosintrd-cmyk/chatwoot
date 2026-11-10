@@ -1,6 +1,6 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
-@import 'dashboard/assets/scss/next-colors';
+@import '../dashboard/assets/scss/next-colors';
 
 /*
  * Smart Work RD host theme.
@@ -85,6 +85,7 @@
 
 [data-smartworkrd-inbox-root] :is(button, input, select, textarea) {
   font-family: inherit;
+  transition: none !important;
 }
 
 [data-smartworkrd-inbox-root] :is(.font-sans, .font-inter, .font-interDisplay) {
