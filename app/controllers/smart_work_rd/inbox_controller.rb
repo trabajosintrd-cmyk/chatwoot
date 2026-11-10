@@ -25,8 +25,8 @@ module SmartWorkRd
         signupEnabled: @global_config['ENABLE_ACCOUNT_SIGNUP'],
         isEnterprise: @global_config['IS_ENTERPRISE'],
         isMfaEnabled: Chatwoot.mfa_enabled?,
-        enabledLanguages: available_locales_with_name,
-        helpUrls: feature_help_urls,
+        enabledLanguages: helpers.available_locales_with_name,
+        helpUrls: helpers.feature_help_urls,
         inboxEventsEnabled: ENV['ENABLE_INBOX_EVENTS'].present?,
         searchTimeRangeLimitDays: Limits.search_time_range_limit_days,
         autoResolveMinMinutes: Limits.auto_resolve_min_minutes,
@@ -39,7 +39,7 @@ module SmartWorkRd
       render json: {
         chatwootConfig: chatwoot_config,
         globalConfig: @global_config,
-        browserConfig: { browser_name: browser.name }
+        browserConfig: {}
       }
     end
 
