@@ -231,10 +231,8 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
       user.ui_settings?.locale || account.locale
     );
 
-    // The CRM host owns the theme. Chatwoot must remain in the shared light theme.
-    document.body.classList.remove('dark');
-    document.documentElement.style.setProperty('color-scheme', 'light');
-
+    // The CRM host owns the theme. The scoped inbox root carries the light palette;
+    // do not mutate body or document-level theme state.
     app.mount(element);
 
     if (user.pubsub_token) {
