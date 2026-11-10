@@ -458,10 +458,23 @@ describe('ActionCableConnector - Copilot Tests', () => {
 
 
 describe('ActionCableConnector teardown', () => {
+  afterEach(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
+  });
+
   it('clears pending inbox timers when the microfrontend unmounts', () => {
     vi.useFakeTimers();
 
-    const connector = ActionCableConnector.init(store.$store, 'test-token');
+    const store = {
+      dispatch: vi.fn(),
+      getters: {
+        getCurrentAccountId: 12,
+        getCurrentUserID: 34,
+        'accounts/isFeatureEnabledonAccount': vi.fn(() => true),
+      },
+    };
+    const connector = ActionCableConnector.init(store, 'test-token');
     connector.unreadCountsFetchTimer = setTimeout(() => {}, 1000);
     connector.mentionUnreadCountsFetchTimer = setTimeout(() => {}, 1000);
     connector.mentionUnreadCountsRetryTimer = setTimeout(() => {}, 1000);
