@@ -25,23 +25,15 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     end
   end
 
-  if ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_API_CORS', false))
-    if smartworkrd_origin.present?
-      allow do
-        origins smartworkrd_origin
-        resource '/api/*',
-                 headers: :any,
-                 methods: :any,
-                 expose: %w[access-token client uid expiry]
-      end
-    else
-      allow do
-        origins '*'
-        resource '/api/*',
-                 headers: :any,
-                 methods: :any,
-                 expose: %w[access-token client uid expiry]
-      end
+  # The embedded CRM API must never fall back to wildcard origins. If the
+  # exact host origin is not configured, leave /api/* CORS closed.
+  if ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_API_CORS', false)) && smartworkrd_origin.present?
+    allow do
+      origins smartworkrd_origin
+      resource '/api/*',
+               headers: :any,
+               methods: :any,
+               expose: %w[access-token client uid expiry]
     end
   end
 
