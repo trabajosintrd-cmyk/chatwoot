@@ -20,12 +20,18 @@ import commonHelpers, { isJSONValid } from 'dashboard/helper/commons';
 import constants from 'dashboard/constants/globals';
 import store from 'dashboard/store';
 import conversationRoutes from 'dashboard/routes/dashboard/conversation/conversation.routes';
-import { getCurrentAccount, getUserPermissions } from 'dashboard/helper/permissionsHelper';
+import {
+  getCurrentAccount,
+  getUserPermissions,
+} from 'dashboard/helper/permissionsHelper';
 import { routeIsAccessibleFor } from 'dashboard/helper/routeHelpers';
 import vueActionCable from 'dashboard/helper/actionCable';
 import ReconnectService from 'dashboard/helper/ReconnectService';
 import { setColorTheme } from 'dashboard/helper/themeHelper';
-import { initializeAnalyticsEvents, initializeChatwootEvents } from 'dashboard/helper/scriptHelpers.js';
+import {
+  initializeAnalyticsEvents,
+  initializeChatwootEvents,
+} from 'dashboard/helper/scriptHelpers.js';
 import { domPurifyConfig } from 'shared/helpers/HTMLSanitizer';
 import SmartWorkInbox from '../smartworkrd/SmartWorkInbox.vue';
 
@@ -49,11 +55,20 @@ const initializeGlobalHelpers = () => {
 };
 
 const getRequestedAccountId = (options, user) => {
-  const queryAccountId = new URLSearchParams(window.location.search).get('account_id');
-  const accountId = Number(options.accountId || queryAccountId || user.account_id || user.accounts?.[0]?.id);
+  const queryAccountId = new URLSearchParams(window.location.search).get(
+    'account_id'
+  );
+  const accountId = Number(
+    options.accountId ||
+      queryAccountId ||
+      user.account_id ||
+      user.accounts?.[0]?.id
+  );
 
   if (!Number.isSafeInteger(accountId) || accountId <= 0) {
-    throw new Error('No encontramos una cuenta de Chatwoot válida para abrir la bandeja.');
+    throw new Error(
+      'No encontramos una cuenta de Chatwoot válida para abrir la bandeja.'
+    );
   }
 
   return accountId;
@@ -127,6 +142,7 @@ export const unmountSmartWorkInbox = element => {
     return false;
   }
 
+  activeInstance.cleanupTheme?.();
   activeInstance.reconnectService?.disconnect();
   activeInstance.actionCable?.disconnect();
   activeInstance.app.unmount();
@@ -143,14 +159,18 @@ export const unmountSmartWorkInbox = element => {
 
 export const mountSmartWorkInbox = async (element, options = {}) => {
   if (!(element instanceof HTMLElement)) {
-    throw new Error('Debes indicar el contenedor donde se mostrará la bandeja.');
+    throw new Error(
+      'Debes indicar el contenedor donde se mostrará la bandeja.'
+    );
   }
 
   if (activeInstance) {
     if (activeInstance.element === element) {
       return activeInstance.handle;
     }
-    throw new Error('La bandeja Smart Work RD ya está montada en otro contenedor.');
+    throw new Error(
+      'La bandeja Smart Work RD ya está montada en otro contenedor.'
+    );
   }
 
   if (mounting) {
@@ -162,6 +182,7 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
   let unsync;
   let actionCable;
   let reconnectService;
+  let cleanupTheme;
 
   try {
     initializeGlobalHelpers();
@@ -169,32 +190,57 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
 
     const user = store.getters.getCurrentUser;
     if (!store.getters.isLoggedIn || !user?.accounts?.length) {
-      throw new Error('Inicia sesión en Chatwoot antes de abrir la bandeja.');
+      throw new Error(
+        'Inicia sesión en Chatwoot antes de abrir la bandeja.'
+      );
     }
 
     const accountId = getRequestedAccountId(options, user);
     const accountMembership = getCurrentAccount(user, accountId);
     if (!accountMembership) {
-      throw new Error('Tu usuario no tiene acceso a la cuenta de Chatwoot solicitada.');
+      throw new Error(
+        'Tu usuario no tiene acceso a la cuenta de Chatwoot solicitada.'
+      );
     }
 
     await store.dispatch('accounts/get', { accountId });
     await store.dispatch('setActiveAccount', { accountId });
 
     const account = store.getters['accounts/getAccount'](accountId);
+    if (!account?.id) {
+      throw new Error('No pudimos cargar la cuenta de Chatwoot seleccionada.');
+    }
+
     const router = createInboxRouter();
     unsync = sync(store, router);
 
-    const navigation = await router.push(`/app/accounts/${accountId}/dashboard`);
+    const navigation = await router.push(
+      `/app/accounts/${accountId}/dashboard`
+    );
     await router.isReady();
+
     if (navigation?.type || router.currentRoute.value.name !== 'home') {
-      throw new Error('No pudimos abrir la bandeja con los permisos de esta cuenta.');
+      throw new Error(
+        'No pudimos abrir la bandeja con los permisos de esta cuenta.'
+      );
     }
 
     app = createApp(SmartWorkInbox);
-    installPlugins(app, router, element, user.ui_settings?.locale || account?.locale);
+    installPlugins(
+      app,
+      router,
+      element,
+      user.ui_settings?.locale || account.locale
+    );
 
-    setColorTheme(window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setColorTheme(mediaQuery.matches);
+    const onThemeChange = event => setColorTheme(event.matches);
+    mediaQuery.addEventListener?.('change', onThemeChange);
+    cleanupTheme = () => {
+      mediaQuery.removeEventListener?.('change', onThemeChange);
+    };
+
     app.mount(element);
 
     if (user.pubsub_token) {
@@ -203,15 +249,8 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
       window.reconnectService = reconnectService;
     }
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const onThemeChange = event => setColorTheme(event.matches);
-    mediaQuery.addEventListener?.('change', onThemeChange);
-
     const handle = {
-      unmount: () => {
-        mediaQuery.removeEventListener?.('change', onThemeChange);
-        return unmountSmartWorkInbox(element);
-      },
+      unmount: () => unmountSmartWorkInbox(element),
     };
 
     activeInstance = {
@@ -220,11 +259,13 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
       unsync,
       actionCable,
       reconnectService,
+      cleanupTheme,
       handle,
     };
 
     return handle;
   } catch (error) {
+    cleanupTheme?.();
     reconnectService?.disconnect();
     actionCable?.disconnect();
     app?.unmount();
@@ -248,9 +289,10 @@ if (typeof window !== 'undefined') {
       const message = document.createElement('p');
       message.setAttribute('role', 'alert');
       message.className = 'p-6 text-sm text-n-slate-12';
-      message.textContent = error instanceof Error
-        ? error.message
-        : 'No se pudo inicializar la bandeja.';
+      message.textContent =
+        error instanceof Error
+          ? error.message
+          : 'No se pudo inicializar la bandeja.';
       standaloneRoot.append(message);
     });
   }
