@@ -1,6 +1,7 @@
 module SmartWorkRd
   class SsoController < ApplicationController
     class SsoForbiddenError < StandardError; end
+    class SsoConfigurationError < StandardError; end
 
     skip_before_action :set_current_user
     before_action :verify_smartworkrd_origin!
@@ -19,6 +20,8 @@ module SmartWorkRd
         user_id: user.id,
         expires_at: Time.at(auth_headers.fetch('expiry').to_i).utc.iso8601
       }, status: :ok
+    rescue SsoConfigurationError
+      render json: { error: 'La autenticación SSO no está configurada en Chatwoot.' }, status: :service_unavailable
     rescue SsoForbiddenError
       render json: { error: 'El usuario no tiene permisos para esta cuenta de Chatwoot.' }, status: :forbidden
     rescue JWT::DecodeError, KeyError, ArgumentError, ActiveRecord::RecordNotUnique
@@ -29,7 +32,7 @@ module SmartWorkRd
 
     def decode_ticket(ticket)
       secret = ENV['SMARTWORKRD_SSO_SECRET'].to_s
-      raise JWT::DecodeError, 'SSO secret is not configured' if secret.bytesize < 32
+      raise SsoConfigurationError if secret.bytesize < 32
 
       issuer = ENV.fetch('SMARTWORKRD_SSO_ISSUER', 'smartworkrd-crm')
       audience = ENV.fetch('SMARTWORKRD_SSO_AUDIENCE', 'chatwoot')
