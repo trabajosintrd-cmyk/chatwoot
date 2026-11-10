@@ -4,15 +4,13 @@ module SmartWorkRd
     class SsoConfigurationError < StandardError; end
 
     skip_before_action :set_current_user
+    before_action :set_no_store_headers
     before_action :verify_smartworkrd_origin!
 
     def consume
       claims = validated_ticket_claims(decode_ticket(params.require(:ticket)))
       account, user = resolve_chatwoot_identity(claims)
       auth_headers = consume_ticket(claims, account, user)
-
-      response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
-      response.headers['Pragma'] = 'no-cache'
 
       render json: {
         auth: auth_headers,
@@ -114,6 +112,11 @@ module SmartWorkRd
       end
 
       auth_headers
+    end
+
+    def set_no_store_headers
+      response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate'
+      response.headers['Pragma'] = 'no-cache'
     end
 
     def verify_smartworkrd_origin!
