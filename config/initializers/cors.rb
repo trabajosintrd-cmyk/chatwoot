@@ -34,6 +34,8 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
                headers: :any,
                methods: :any,
                expose: %w[access-token client uid expiry]
+      # Active Storage direct uploads and attachment/thumbnail redirects.
+      resource '/rails/active_storage/*', headers: :any, methods: :any
     end
   end
 
