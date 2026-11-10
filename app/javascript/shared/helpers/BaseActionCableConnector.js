@@ -97,6 +97,7 @@ class BaseActionCableConnector {
 
   disconnect() {
     this.isManuallyDisconnected = true;
+    BaseActionCableConnector.isDisconnected = false;
     if (this.presenceTimer) {
       clearTimeout(this.presenceTimer);
       this.presenceTimer = null;
