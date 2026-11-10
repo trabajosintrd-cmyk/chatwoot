@@ -79,14 +79,19 @@ module SmartWorkRd
     def resolve_chatwoot_identity(claims)
       account = Account.find_by(id: claims.fetch(:account_id))
       user = User.find_by(id: claims.fetch(:user_id))
-      account_user = AccountUser.find_by(
-        account_id: claims.fetch(:account_id),
-        user_id: claims.fetch(:user_id)
-      )
       expected_role = %w[owner admin].include?(claims.fetch(:crm_role)) ? 'administrator' : 'agent'
 
-      unless account&.active? && user&.active_for_authentication? &&
-             account_user&.role == expected_role
+      unless account&.active? && user&.active_for_authentication?
+        raise SsoForbiddenError
+      end
+
+      account_memberships = AccountUser.where(user_id: user.id)
+      account_user = account_memberships.find_by(account_id: account.id)
+
+      # Devise Token Auth issues a user-wide credential, not an account-scoped one.
+      # A dedicated Chatwoot user per CRM tenant prevents that credential from
+      # reaching a second tenant's account through another membership.
+      unless account_memberships.count == 1 && account_user&.role == expected_role
         raise SsoForbiddenError
       end
 
