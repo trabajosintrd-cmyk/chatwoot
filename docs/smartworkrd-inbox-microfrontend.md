@@ -66,3 +66,36 @@ The microfrontend imports a dedicated scoped stylesheet at `app/javascript/smart
 - The host remains the only owner of navigation, tenant/business switching, and account/session controls.
 
 This is a visual alignment layer, not a completed remote asset loader or SSO integration.
+
+
+## SSO broker contract
+
+The Chatwoot fork now exposes `POST /smartworkrd/sso/consume`. It accepts a signed HS256 ticket from the Smart Work RD API and:
+
+- Verifies issuer, audience, expiry, origin, CRM role, mapped Chatwoot user and account membership.
+- Rejects expired or replayed tickets using a unique `jti` record in the Chatwoot database.
+- Creates a normal Devise Token Auth credential and returns its headers in a `no-store` JSON response.
+- Does not place the credential in a URL or log it. The host is responsible for storing the returned auth header object in its own `cw_d_session_info` cookie, which the Chatwoot frontend reads.
+
+The CRM API issues tickets from `POST /tenants/:tenantId/integrations/chatwoot/launch-ticket` after checking tenant membership, business access, role, account mapping and user mapping. Tenant owners/admins configure the mappings through the CRM API. A successful browser handshake should be followed by the CRM `confirm` endpoint to mark the integration connected.
+
+### Required Chatwoot environment
+
+- `SMARTWORKRD_SSO_SECRET`: same random secret as CRM `CHATWOOT_SSO_SECRET`, minimum 32 bytes.
+- `SMARTWORKRD_SSO_ISSUER`: defaults to `smartworkrd-crm`.
+- `SMARTWORKRD_SSO_AUDIENCE`: defaults to `chatwoot`.
+- `SMARTWORKRD_ALLOWED_ORIGIN`: exact CRM origin, e.g. `https://crm.smartworkrd.com`, without a trailing slash.
+- `ENABLE_API_CORS=true`: allows the configured CRM origin to call Chatwoot APIs.
+- `FORCE_SSL=true`: required in production.
+
+The CORS initializer allows the configured origin for the SSO endpoint, Chatwoot APIs and Action Cable. It does not enable wildcard API CORS when the Smart Work RD origin is configured.
+
+### Host responsibilities still pending
+
+- Obtain a launch ticket from the CRM API using the current Supabase bearer token.
+- POST the ticket to this endpoint, then store the returned `auth` object as `cw_d_session_info` on the CRM origin with its expiry.
+- Set `window.chatwootConfig.apiHost` to the Chatwoot origin before loading the entrypoint.
+- Resolve the production Vite manifest/asset URLs and load the JavaScript and CSS dynamically.
+- Mount the microfrontend and call the CRM confirmation endpoint only after the SSO handshake succeeds.
+
+The SSO endpoint and mappings are implemented in isolated development branches. They have not yet passed build, replay, CORS, cross-tenant or browser end-to-end tests and must not be treated as production-ready.
