@@ -27,7 +27,6 @@ import {
 import { routeIsAccessibleFor } from 'dashboard/helper/routeHelpers';
 import vueActionCable from 'dashboard/helper/actionCable';
 import ReconnectService from 'dashboard/helper/ReconnectService';
-import { setColorTheme } from 'dashboard/helper/themeHelper';
 import {
   initializeAnalyticsEvents,
   initializeChatwootEvents,
@@ -36,6 +35,7 @@ import { domPurifyConfig } from 'shared/helpers/HTMLSanitizer';
 import SmartWorkInbox from '../smartworkrd/SmartWorkInbox.vue';
 
 import 'floating-vue/dist/style.css';
+import '../smartworkrd/inbox.scss';
 import '@chatwoot/viz/style.css';
 
 let globalHelpersInitialized = false;
@@ -142,7 +142,6 @@ export const unmountSmartWorkInbox = element => {
     return false;
   }
 
-  activeInstance.cleanupTheme?.();
   activeInstance.reconnectService?.disconnect();
   activeInstance.actionCable?.disconnect();
   activeInstance.app.unmount();
@@ -182,7 +181,6 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
   let unsync;
   let actionCable;
   let reconnectService;
-  let cleanupTheme;
 
   try {
     initializeGlobalHelpers();
@@ -233,13 +231,9 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
       user.ui_settings?.locale || account.locale
     );
 
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    setColorTheme(mediaQuery.matches);
-    const onThemeChange = event => setColorTheme(event.matches);
-    mediaQuery.addEventListener?.('change', onThemeChange);
-    cleanupTheme = () => {
-      mediaQuery.removeEventListener?.('change', onThemeChange);
-    };
+    // The CRM host owns the theme. Chatwoot must remain in the shared light theme.
+    document.body.classList.remove('dark');
+    document.documentElement.style.setProperty('color-scheme', 'light');
 
     app.mount(element);
 
@@ -259,13 +253,11 @@ export const mountSmartWorkInbox = async (element, options = {}) => {
       unsync,
       actionCable,
       reconnectService,
-      cleanupTheme,
       handle,
     };
 
     return handle;
   } catch (error) {
-    cleanupTheme?.();
     reconnectService?.disconnect();
     actionCable?.disconnect();
     app?.unmount();
