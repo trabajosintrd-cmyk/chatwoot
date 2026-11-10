@@ -128,6 +128,36 @@ RSpec.describe 'Smart Work RD SSO', type: :request do
     end
   end
 
+  describe 'POST /smartworkrd/sso/revoke' do
+    let(:service_headers) do
+      { 'Authorization' => "Bearer #{secret}" }
+    end
+
+    it 'removes the account membership and invalidates existing Chatwoot tokens' do
+      agent.update!(tokens: { 'crm-session' => { 'token' => 'active-token' } })
+
+      post '/smartworkrd/sso/revoke',
+           params: { account_id: account.id, user_id: agent.id },
+           headers: service_headers,
+           as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to eq('revoked' => true)
+      expect(AccountUser.exists?(account_id: account.id, user_id: agent.id)).to be(false)
+      expect(agent.reload.tokens).to eq({})
+    end
+
+    it 'rejects requests without the server-to-server secret' do
+      post '/smartworkrd/sso/revoke',
+           params: { account_id: account.id, user_id: agent.id },
+           headers: { 'Authorization' => 'Bearer invalid-secret' },
+           as: :json
+
+      expect(response).to have_http_status(:unauthorized)
+      expect(AccountUser.exists?(account_id: account.id, user_id: agent.id)).to be(true)
+    end
+  end
+
   describe 'GET /smartworkrd/inbox' do
     it 'renders the standalone mount point used for direct smoke tests' do
       get '/smartworkrd/inbox', params: { account_id: account.id }
