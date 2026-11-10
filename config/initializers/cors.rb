@@ -15,29 +15,27 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     end
   end
 
-  if ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_API_CORS', false))
-    if smartworkrd_origin.present?
-      allow do
-        origins smartworkrd_origin
-        resource '/api/*',
-                 headers: :any,
-                 methods: :any,
-                 expose: %w[access-token client uid expiry]
-      end
-    else
-      allow do
-        origins '*'
-        resource '/api/*',
-                 headers: :any,
-                 methods: :any,
-                 expose: %w[access-token client uid expiry]
-      end
+  if ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_API_CORS', false)) &&
+     smartworkrd_origin.blank?
+    allow do
+      origins '*'
+      resource '/api/*',
+               headers: :any,
+               methods: :any,
+               expose: %w[access-token client uid expiry]
     end
   end
 
   if smartworkrd_origin.present?
     allow do
       origins smartworkrd_origin
+      # The embedded inbox calls Chatwoot's authenticated API directly from
+      # the CRM origin, so API CORS must be enabled whenever the integration
+      # origin is configured (not only when the optional global API flag is on).
+      resource '/api/*',
+               headers: :any,
+               methods: :any,
+               expose: %w[access-token client uid expiry]
       resource '/smartworkrd/sso/consume',
                headers: :any,
                methods: [:post, :options]
