@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_11_03_142055) do
+ActiveRecord::Schema[7.1].define(version: 2026_11_09_140000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1825,6 +1825,21 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_03_142055) do
     t.index ["uid", "provider"], name: "index_users_on_uid_and_provider", unique: true
   end
 
+  create_table "smart_work_rd_sso_tickets", force: :cascade do |t|
+    t.string "jti", null: false
+    t.uuid "tenant_id", null: false
+    t.uuid "business_id", null: false
+    t.bigint "account_id", null: false
+    t.bigint "user_id", null: false
+    t.string "crm_role", null: false
+    t.datetime "expires_at", null: false
+    t.datetime "consumed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_smart_work_rd_sso_tickets_on_expires_at"
+    t.index ["jti"], name: "index_smart_work_rd_sso_tickets_on_jti", unique: true
+  end
+
   create_table "webhooks", force: :cascade do |t|
     t.integer "account_id"
     t.integer "inbox_id"
@@ -1870,6 +1885,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_11_03_142055) do
   add_foreign_key "conversation_monitors", "accounts", on_delete: :cascade
   add_foreign_key "conversation_monitors", "users", on_delete: :nullify
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "smart_work_rd_sso_tickets", "accounts", on_delete: :cascade
+  add_foreign_key "smart_work_rd_sso_tickets", "users", on_delete: :cascade
   add_foreign_key "shopify_custom_apps", "accounts"
   add_foreign_key "user_sessions", "users"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
