@@ -19,6 +19,7 @@ Rails.application.routes.draw do
     get '/app', to: 'dashboard#index'
     get '/smartworkrd/inbox', to: 'smart_work_rd/inbox#index', as: 'smartworkrd_inbox'
     get '/smartworkrd/inbox/assets', to: 'smart_work_rd/inbox#assets', as: 'smartworkrd_inbox_assets'
+    get '/smartworkrd/inbox/config', to: 'smart_work_rd/inbox#config', as: 'smartworkrd_inbox_config'
     post '/smartworkrd/sso/consume', to: 'smart_work_rd/sso#consume', as: 'smartworkrd_sso_consume'
     # Shareable install link for the Captain tools catalog; the dashboard picks the account and assistant
     get '/captain/toolsets/install', to: redirect(status: 302) { |_params, request|
