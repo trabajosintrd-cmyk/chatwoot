@@ -33,7 +33,7 @@ El host debe:
 1. Solicitar un ticket al CRM API con el usuario Supabase autenticado y el negocio activo.
 2. Enviar el ticket a `POST /smartworkrd/sso/consume`.
 3. Guardar el objeto `auth` devuelto en la cookie legible por JavaScript `cw_d_session_info` del origen CRM; el token nunca viaja en la URL.
-4. Definir `window.chatwootConfig.apiHost` y `hostURL` con el origen Chatwoot.
+4. Obtener `/smartworkrd/inbox/config` y establecer `window.chatwootConfig`, `window.globalConfig` y `window.browserConfig` antes de importar el entrypoint. Sobrescribir `apiHost`, `hostURL` y `websocketURL` con el origen Chatwoot.
 5. Obtener los tags de recursos en `/smartworkrd/inbox/assets`, cargar CSS y entrypoint Vite, y llamar `window.SmartWorkRDInbox.mount(container, { accountId })`.
 6. Llamar al endpoint CRM `confirm` solo después de que el montaje SSO haya tenido éxito.
 7. Llamar `unmount()` al desmontar el módulo.
