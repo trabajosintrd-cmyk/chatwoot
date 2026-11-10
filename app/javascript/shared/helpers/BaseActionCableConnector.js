@@ -14,6 +14,8 @@ class BaseActionCableConnector {
   ) {
     const websocketURL = websocketHost ? `${websocketHost}/cable` : undefined;
 
+    this.isManuallyDisconnected = false;
+    this.presenceTimer = null;
     this.consumer = createConsumer(websocketURL);
     this.subscription = this.consumer.subscriptions.create(
       {
@@ -28,6 +30,8 @@ class BaseActionCableConnector {
         },
         received: this.onReceived,
         disconnected: () => {
+          if (this.isManuallyDisconnected) return;
+
           BaseActionCableConnector.isDisconnected = true;
           this.onDisconnected();
           this.initReconnectTimer();
@@ -39,8 +43,15 @@ class BaseActionCableConnector {
     this.reconnectTimer = null;
     this.isAValidEvent = () => true;
     this.triggerPresenceInterval = () => {
-      setTimeout(() => {
-        this.subscription.updatePresence();
+      if (this.isManuallyDisconnected) return;
+
+      this.presenceTimer = setTimeout(() => {
+        this.presenceTimer = null;
+        if (this.isManuallyDisconnected) return;
+
+        if (this.consumer.connection.isOpen()) {
+          this.subscription.updatePresence();
+        }
         this.triggerPresenceInterval();
       }, presenceInterval);
     };
@@ -48,6 +59,8 @@ class BaseActionCableConnector {
   }
 
   checkConnection() {
+    if (this.isManuallyDisconnected) return;
+
     const isConnectionActive = this.consumer.connection.isOpen();
     const isReconnected =
       BaseActionCableConnector.isDisconnected && isConnectionActive;
@@ -68,6 +81,8 @@ class BaseActionCableConnector {
   };
 
   initReconnectTimer = () => {
+    if (this.isManuallyDisconnected) return;
+
     this.clearReconnectTimer();
     this.reconnectTimer = setTimeout(() => {
       this.checkConnection();
@@ -81,6 +96,13 @@ class BaseActionCableConnector {
   onDisconnected = () => {};
 
   disconnect() {
+    this.isManuallyDisconnected = true;
+    BaseActionCableConnector.isDisconnected = false;
+    if (this.presenceTimer) {
+      clearTimeout(this.presenceTimer);
+      this.presenceTimer = null;
+    }
+    this.clearReconnectTimer();
     this.consumer.disconnect();
   }
 

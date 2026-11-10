@@ -54,6 +54,31 @@ RSpec.describe AccountUser do
     end
   end
 
+  describe 'Smart Work RD single-account SSO mode' do
+    around do |example|
+      previous = ENV['SMARTWORKRD_ALLOWED_ORIGIN']
+      ENV['SMARTWORKRD_ALLOWED_ORIGIN'] = 'https://crm.smartworkrd.com'
+
+      example.run
+    ensure
+      previous.nil? ? ENV.delete('SMARTWORKRD_ALLOWED_ORIGIN') : ENV['SMARTWORKRD_ALLOWED_ORIGIN'] = previous
+    end
+
+    it 'prevents an SSO-managed user from joining a second Chatwoot account' do
+      user = create(:user)
+      first_account = create(:account)
+      second_account = create(:account)
+      create(:account_user, account: first_account, user: user)
+
+      second_membership = build(:account_user, account: second_account, user: user)
+
+      expect(second_membership).not_to be_valid
+      expect(second_membership.errors[:user_id]).to include(
+        'is already assigned to another Chatwoot account for Smart Work RD SSO'
+      )
+    end
+  end
+
   describe 'filtered unread count invalidation' do
     let(:account) { create(:account) }
     let(:user) { create(:user) }

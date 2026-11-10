@@ -1,0 +1,103 @@
+# Smart Work RD Inbox — Microfrontend
+
+## Estado
+
+Implementación aislada en la rama `smartworkrd/inbox-microfrontend-spike`, basada en Chatwoot Community 4.19.1. Está preparada para integrarse en la shell Next.js del CRM, pero **no está validada ni desplegada en producción**.
+
+## Qué contiene el fork
+
+- Ruta `/smartworkrd/inbox` para pruebas directas.
+- Ruta `/smartworkrd/inbox/assets`, que devuelve los tags Vite de CSS y JavaScript para el loader remoto.
+- Ruta `/smartworkrd/inbox/config`, que entrega la configuración pública runtime (`chatwootConfig`, `globalConfig` y `browserConfig`) antes de importar Vuex.
+- Entry point Vue con ciclo `mount(element, options)` / `unmount(element)`.
+- Vue Router con historial en memoria y solo las rutas de conversación.
+- Restablece el estado singleton de Vuex al montar/desmontar para evitar que conversaciones, contactos o cuentas de un tenant permanezcan en memoria al abrir otro.
+- Montaje directo de `ConversationView`, sin sidebar, topbar, login ni selector global de cuenta de Chatwoot.
+- Bridge global `window.SmartWorkRDInbox`.
+- Estilos scoped para el mount point, utilidades Tailwind y tokens de Smart Work RD.
+- Paleta primaria verde bosque y tema claro; la shell CRM conserva el control del tema.
+- Endpoint `POST /smartworkrd/sso/consume` para tickets firmados de un solo uso.
+- Endpoint server-to-server `POST /smartworkrd/sso/revoke`, protegido por el mismo secreto compartido, que elimina la membresía de cuenta y revoca los tokens Devise existentes.
+
+## Contrato visual
+
+La shell React del CRM es la única propietaria de navegación, cabecera, selector de tenant/negocio, sesión, permisos y tema. Chatwoot ocupa exclusivamente el área funcional de conversaciones.
+
+El microfrontend:
+- Hereda la identidad clara del CRM: canvas gris, superficies blancas, texto carbón y acciones verde bosque.
+- No importa el stylesheet global del dashboard Chatwoot, que cambiaría tipografía y estilos del documento anfitrión.
+- Usa un root scoped con los tokens de color necesarios.
+- No añade una segunda navegación ni un segundo dashboard.
+
+## Ciclo del host
+
+El host debe:
+
+1. Solicitar un ticket al CRM API con el usuario Supabase autenticado y el negocio activo.
+2. Enviar el ticket a `POST /smartworkrd/sso/consume`.
+3. Guardar el objeto `auth` devuelto en la cookie legible por JavaScript `cw_d_session_info` del origen CRM; el token nunca viaja en la URL.
+4. Obtener `/smartworkrd/inbox/config` y establecer `window.chatwootConfig`, `window.globalConfig` y `window.browserConfig` antes de importar el entrypoint. Sobrescribir `apiHost`, `hostURL` y `websocketURL` con el origen Chatwoot.
+5. Obtener los tags de recursos en `/smartworkrd/inbox/assets`, cargar CSS y entrypoint Vite, y llamar `window.SmartWorkRDInbox.mount(container, { accountId })`.
+6. Llamar al endpoint CRM `confirm` solo después de que el montaje SSO haya tenido éxito.
+7. Llamar `unmount()` al desmontar el módulo.
+
+El repositorio CRM ya contiene el componente `ChatwootInboxMount` que realiza este flujo y reemplaza la bandeja anterior en la misma ruta cuando `NEXT_PUBLIC_CHATWOOT_INBOX_ENABLED=true`. El flag permanece en `false` por defecto. No aparecen dos bandejas simultáneamente.
+
+## SSO y autorización
+
+El endpoint Chatwoot valida:
+- Firma HS256, issuer, audience, expiración y origen permitido.
+- Ticket con `jti` único y no reutilizado.
+- Rol CRM permitido: owner, admin, supervisor o agent.
+- Usuario Chatwoot activo, miembro de la cuenta indicada y con rol compatible.
+- Cada usuario Chatwoot debe pertenecer a una sola cuenta: Devise Token Auth genera credenciales a nivel de usuario, no de cuenta. El endpoint SSO rechaza usuarios con varias membresías y, cuando `SMARTWORKRD_ALLOWED_ORIGIN` está configurado, el modelo `AccountUser` impide añadir una segunda cuenta a un usuario. Los usuarios preexistentes con varias cuentas deben corregirse antes de vincularlos.
+
+Al consumirlo, Chatwoot crea una credencial Devise Token Auth y devuelve los headers en una respuesta JSON `no-store`. La tabla `smart_work_rd_sso_tickets` registra el `jti` consumido y bloquea replays.
+
+El CRM mantiene los vínculos business-scoped entre negocio, cuenta Chatwoot y usuario externo. Cada negocio utiliza una cuenta Chatwoot independiente. La identidad externa de usuario es única globalmente: no se puede reutilizar el mismo ID de Chatwoot entre negocios. Cambiar la cuenta revoca primero las membresías y sesiones anteriores. La UI de Integraciones permite configurar la cuenta y vincular, actualizar o retirar la identidad de cada miembro con acceso al negocio. Una persona que trabaja en varios negocios necesita una identidad Chatwoot distinta por cada cuenta. Al retirar un miembro o degradarlo a solo lectura, el CRM llama al endpoint de revocación antes de eliminar el vínculo.
+
+## Variables de entorno
+
+En la API CRM:
+- `CHATWOOT_BASE_URL`: origen HTTPS del servidor Chatwoot, sin slash final.
+- `CHATWOOT_SSO_SECRET`: secreto aleatorio de al menos 32 bytes.
+- `CHATWOOT_SSO_ISSUER=smartworkrd-crm`.
+- `CHATWOOT_SSO_AUDIENCE=chatwoot`.
+
+En Chatwoot:
+- `SMARTWORKRD_SSO_SECRET`: el mismo secreto que la API CRM.
+- `SMARTWORKRD_SSO_ISSUER=smartworkrd-crm`.
+- `SMARTWORKRD_SSO_AUDIENCE=chatwoot`.
+- `SMARTWORKRD_ALLOWED_ORIGIN`: origen exacto del CRM, sin slash final.
+- `ENABLE_API_CORS=true`.
+- `FORCE_SSL=true` en producción.
+
+CORS de assets permite cargar Vite desde el host; la ruta de configuración y el endpoint SSO solo aceptan el origen CRM. CORS de API y `/rails/active_storage/*` queda limitado al origen CRM; Action Cable admite el origen CRM y el propio origen Chatwoot. Si Active Storage usa S3 u otro object storage, su bucket también debe permitir el origen CRM para los PUT/GET firmados. No se usa cookie compartida entre subdominios: el host guarda la credencial Chatwoot en su propio origen para que el entrypoint pueda leerla y añadir headers a las solicitudes API.
+
+## Pendiente antes de producción
+
+- Build, lint y pruebas de migración en una base real.
+- Validación real de create_new_auth_token, cookie, API CORS y Action Cable.
+- Smoke test de lista, abrir conversación, enviar mensaje, notas, archivos, realtime y desmontaje.
+- Prueba de replay, ticket expirado, origen no autorizado y roles incompatibles.
+- Prueba de aislamiento con dos tenants y dos cuentas Chatwoot.
+- CSP y dominios finales del despliegue.
+- Provisionamiento automatizado de cuentas y usuarios Chatwoot; por ahora los IDs externos se crean y asignan manualmente.
+- Validar la revocación server-to-server de membresía y tokens en staging, incluida la eliminación de miembros desde el panel de equipo.
+- Verificación visual y responsive en staging.
+
+No conectar tráfico real ni activar el feature flag hasta superar esas pruebas.
+
+## Prueba local directa
+
+1. Inicia Chatwoot con sus instrucciones habituales.
+2. Inicia sesión en el mismo origen Chatwoot.
+3. Abre `/smartworkrd/inbox` con un `?account_id=123` que pertenezca al usuario.
+4. Comprueba cola, apertura de conversación, envío y realtime.
+5. Desmonta mediante `window.SmartWorkRDInbox.unmount()`.
+
+La prueba directa usa la cookie `cw_d_session_info` existente. La prueba integrada debe usar el flujo SSO descrito arriba.
+
+## Licencia
+
+Este spike importa únicamente código Community. Mantén los avisos MIT y de terceros. No importes código de `enterprise/` ni archivos marcados Enterprise sin una licencia escrita independiente.

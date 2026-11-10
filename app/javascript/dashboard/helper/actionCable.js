@@ -186,6 +186,23 @@ class ActionCableConnector extends BaseActionCableConnector {
   disconnect() {
     this.pendingHandoffAlerts.forEach(clearTimeout);
     this.pendingHandoffAlerts.clear();
+
+    [
+      this.unreadCountsFetchTimer,
+      this.mentionUnreadCountsFetchTimer,
+      this.mentionUnreadCountsRetryTimer,
+      this.filteredUnreadCountsRetryTimer,
+      ...this.CancelTyping,
+    ].forEach(timer => {
+      if (timer) clearTimeout(timer);
+    });
+
+    this.unreadCountsFetchTimer = null;
+    this.mentionUnreadCountsFetchTimer = null;
+    this.mentionUnreadCountsRetryTimer = null;
+    this.filteredUnreadCountsRetryTimer = null;
+    this.CancelTyping = [];
+
     super.disconnect();
   }
 

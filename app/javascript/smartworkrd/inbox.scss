@@ -1,0 +1,125 @@
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import '../dashboard/assets/scss/next-colors';
+
+/*
+ * Smart Work RD host theme.
+ * Keep Chatwoot's utility classes, but scope the visual contract to this
+ * mount point so the host CRM retains ownership of its global interface.
+ */
+[data-smartworkrd-inbox-root] {
+  --slate-1: 245 246 247;
+  --slate-2: 247 248 249;
+  --slate-3: 240 242 243;
+  --slate-4: 232 235 237;
+  --slate-5: 224 229 232;
+  --slate-6: 216 222 226;
+  --slate-7: 202 211 215;
+  --slate-8: 170 182 188;
+  --slate-9: 122 133 141;
+  --slate-10: 108 120 128;
+  --slate-11: 88 101 110;
+  --slate-12: 28 34 39;
+
+  --background-color: 245 246 247;
+  --surface-1: 255 255 255;
+  --surface-2: 247 248 249;
+  --surface-active: 234 242 238;
+  --border-container: 224 229 232;
+  --border-strong: 203 211 216;
+  --border-weak: 224 229 232;
+  --solid-1: 255 255 255;
+  --solid-2: 247 248 249;
+  --solid-3: 240 242 243;
+  --solid-active: 234 242 238;
+  --card-color: 255 255 255;
+  --button-color: 255 255 255;
+  --label-background: 247 248 249;
+
+  --teal-1: 246 249 247;
+  --teal-2: 239 245 241;
+  --teal-3: 226 237 230;
+  --teal-4: 211 228 217;
+  --teal-5: 192 216 201;
+  --teal-6: 166 198 178;
+  --teal-7: 132 174 149;
+  --teal-8: 91 142 112;
+  --teal-9: 32 44 40;
+  --teal-10: 32 44 40;
+  --teal-11: 32 44 40;
+  --teal-12: 24 35 31;
+
+  --blue-1: 246 249 247;
+  --blue-2: 240 246 242;
+  --blue-3: 230 240 233;
+  --blue-4: 216 232 221;
+  --blue-5: 200 220 207;
+  --blue-6: 180 206 190;
+  --blue-7: 154 187 168;
+  --blue-8: 119 161 137;
+  --blue-9: 32 44 40;
+  --blue-10: 32 44 40;
+  --blue-11: 32 44 40;
+  --blue-12: 24 35 31;
+
+  --iris-1: 249 251 249;
+  --iris-2: 244 248 245;
+  --iris-3: 234 242 237;
+  --iris-4: 220 233 225;
+  --iris-5: 207 224 213;
+  --iris-6: 188 211 197;
+  --iris-7: 163 190 173;
+  --iris-8: 127 160 140;
+  --iris-9: 32 44 40;
+  --iris-10: 32 44 40;
+  --iris-11: 32 44 40;
+  --iris-12: 24 35 31;
+
+  --background-input-box: 0, 0, 0, 0.03;
+  --text-blue: 28 34 39;
+  --text-purple: 28 34 39;
+
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  flex-direction: column;
+  background: rgb(var(--surface-1));
+  color: rgb(var(--slate-12));
+  color-scheme: light;
+  font-family: 'Instrument Sans Variable', 'Instrument Sans', Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+[data-smartworkrd-inbox-root] *,
+[data-smartworkrd-inbox-root] *::before,
+[data-smartworkrd-inbox-root] *::after {
+  box-sizing: border-box;
+}
+
+[data-smartworkrd-inbox-root] :is(button, input, select, textarea) {
+  font-family: inherit;
+  transition: none !important;
+}
+
+[data-smartworkrd-inbox-root] :is(.font-sans, .font-inter, .font-interDisplay) {
+  font-family: inherit !important;
+}
+
+[data-smartworkrd-inbox-root] :is(.bg-n-brand) {
+  background-color: #202C28 !important;
+}
+
+[data-smartworkrd-inbox-root] :is(.text-n-brand) {
+  color: #202C28 !important;
+}
+
+[data-smartworkrd-inbox-root] .border-n-brand {
+  border-color: #202C28 !important;
+}
+
+[data-smartworkrd-inbox-root] .ring-n-brand {
+  --tw-ring-color: #202C28 !important;
+}
