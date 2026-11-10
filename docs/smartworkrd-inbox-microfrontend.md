@@ -10,6 +10,7 @@ Implementación aislada en la rama `smartworkrd/inbox-microfrontend-spike`, basa
 - Ruta `/smartworkrd/inbox/assets`, que devuelve los tags Vite de CSS y JavaScript para el loader remoto.
 - Entry point Vue con ciclo `mount(element, options)` / `unmount(element)`.
 - Vue Router con historial en memoria y solo las rutas de conversación.
+- Restablece el estado singleton de Vuex al montar/desmontar para evitar que conversaciones, contactos o cuentas de un tenant permanezcan en memoria al abrir otro.
 - Montaje directo de `ConversationView`, sin sidebar, topbar, login ni selector global de cuenta de Chatwoot.
 - Bridge global `window.SmartWorkRDInbox`.
 - Estilos scoped para el mount point, utilidades Tailwind y tokens de Smart Work RD.
