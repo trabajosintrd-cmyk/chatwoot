@@ -8,6 +8,7 @@ Implementación aislada en la rama `smartworkrd/inbox-microfrontend-spike`, basa
 
 - Ruta `/smartworkrd/inbox` para pruebas directas.
 - Ruta `/smartworkrd/inbox/assets`, que devuelve los tags Vite de CSS y JavaScript para el loader remoto.
+- Ruta `/smartworkrd/inbox/config`, que entrega la configuración pública runtime (`chatwootConfig`, `globalConfig` y `browserConfig`) antes de importar Vuex.
 - Entry point Vue con ciclo `mount(element, options)` / `unmount(element)`.
 - Vue Router con historial en memoria y solo las rutas de conversación.
 - Restablece el estado singleton de Vuex al montar/desmontar para evitar que conversaciones, contactos o cuentas de un tenant permanezcan en memoria al abrir otro.
@@ -48,10 +49,11 @@ El endpoint Chatwoot valida:
 - Ticket con `jti` único y no reutilizado.
 - Rol CRM permitido: owner, admin, supervisor o agent.
 - Usuario Chatwoot activo, miembro de la cuenta indicada y con rol compatible.
+- Cada usuario Chatwoot debe pertenecer a una sola cuenta: Devise Token Auth genera credenciales a nivel de usuario, no de cuenta. Así, el token no puede abrir la cuenta de otro tenant.
 
 Al consumirlo, Chatwoot crea una credencial Devise Token Auth y devuelve los headers en una respuesta JSON `no-store`. La tabla `smart_work_rd_sso_tickets` registra el `jti` consumido y bloquea replays.
 
-El CRM mantiene los vínculos tenant-scoped entre tenant, cuenta Chatwoot y usuario externo. Cambiar la cuenta elimina los vínculos de usuario anteriores para evitar reutilizar identidades de otra cuenta. La UI de Integraciones permite configurar la cuenta y el usuario actual; el resto de los miembros debe vincularse individualmente antes de acceder.
+El CRM mantiene los vínculos tenant-scoped entre tenant, cuenta Chatwoot y usuario externo. La identidad externa de usuario es única globalmente: no se puede reutilizar el mismo ID de Chatwoot en tenants distintos. Cambiar la cuenta elimina los vínculos de usuario anteriores. La UI de Integraciones permite configurar la cuenta y el usuario actual; el resto de los miembros debe vincularse individualmente antes de acceder.
 
 ## Variables de entorno
 
@@ -68,7 +70,7 @@ En Chatwoot:
 - `ENABLE_API_CORS=true`.
 - `FORCE_SSL=true` en producción.
 
-CORS de assets permite cargar Vite desde el host; CORS de API y Action Cable queda limitado al origen CRM configurado. No se usa cookie compartida entre subdominios: el host guarda la credencial Chatwoot en su propio origen para que el entrypoint pueda leerla y añadir headers a las solicitudes API.
+CORS de assets permite cargar Vite desde el host; la ruta de configuración y el endpoint SSO solo aceptan el origen CRM. CORS de API queda limitado al origen CRM y Action Cable admite el origen CRM y el propio origen Chatwoot. No se usa cookie compartida entre subdominios: el host guarda la credencial Chatwoot en su propio origen para que el entrypoint pueda leerla y añadir headers a las solicitudes API.
 
 ## Pendiente antes de producción
 
