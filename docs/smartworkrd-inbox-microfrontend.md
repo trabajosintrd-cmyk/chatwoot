@@ -54,3 +54,15 @@ Do not connect this route to customer traffic until the identity broker, tenant 
 ## License boundary
 
 This spike imports Community code only. Keep the root MIT notices and third-party notices. Do not import code from `enterprise/` or files marked Enterprise without a separate written license.
+
+
+## Smart Work RD visual contract
+
+The microfrontend imports a dedicated scoped stylesheet at `app/javascript/smartworkrd/inbox.scss`. It includes Chatwoot utility classes and color tokens without importing the global dashboard stylesheet, so it does not replace the host's document font or global body styles.
+
+- The mount root uses the Smart Work RD light palette: gray canvas, white surfaces, charcoal text, and forest-green primary actions.
+- The Chatwoot dark-mode class is removed for this route; the CRM host owns the visual theme.
+- The Tailwind content scan includes the Smart Work RD Vue root.
+- The host remains the only owner of navigation, tenant/business switching, and account/session controls.
+
+This is a visual alignment layer, not a completed remote asset loader or SSO integration.
