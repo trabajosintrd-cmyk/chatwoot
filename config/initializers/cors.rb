@@ -6,6 +6,7 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     origins '*'
     resource '/packs/*', headers: :any, methods: [:get, :options]
     resource '/vite/*', headers: :any, methods: [:get, :options]
+    resource '/smartworkrd/inbox/assets', headers: :any, methods: [:get, :options]
     resource '/audio/*', headers: :any, methods: [:get, :options]
     resource '/public/api/*', headers: :any, methods: :any
   end
