@@ -455,3 +455,25 @@ describe('ActionCableConnector - Copilot Tests', () => {
     });
   });
 });
+
+
+describe('ActionCableConnector teardown', () => {
+  it('clears pending inbox timers when the microfrontend unmounts', () => {
+    vi.useFakeTimers();
+
+    const connector = ActionCableConnector.init(store.$store, 'test-token');
+    connector.unreadCountsFetchTimer = setTimeout(() => {}, 1000);
+    connector.mentionUnreadCountsFetchTimer = setTimeout(() => {}, 1000);
+    connector.mentionUnreadCountsRetryTimer = setTimeout(() => {}, 1000);
+    connector.filteredUnreadCountsRetryTimer = setTimeout(() => {}, 1000);
+    connector.CancelTyping[123] = setTimeout(() => {}, 1000);
+    connector.pendingHandoffAlerts.set(
+      '12:123',
+      setTimeout(() => {}, 1000)
+    );
+
+    connector.disconnect();
+
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
