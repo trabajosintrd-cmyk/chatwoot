@@ -9,33 +9,45 @@ Rails.application.config.middleware.insert_before 0, Rack::Cors do
     resource '/smartworkrd/inbox/assets', headers: :any, methods: [:get, :options]
     resource '/audio/*', headers: :any, methods: [:get, :options]
     resource '/public/api/*', headers: :any, methods: :any
+  end
 
-    if ActiveModel::Type::Boolean.new.cast(ENV.fetch('CW_API_ONLY_SERVER', false)) || Rails.env.development?
-      resource '*', headers: :any, methods: :any, expose: %w[access-token client uid expiry]
+  if ActiveModel::Type::Boolean.new.cast(ENV.fetch('CW_API_ONLY_SERVER', false)) || Rails.env.development?
+    if smartworkrd_origin.present?
+      allow do
+        origins smartworkrd_origin
+        resource '*', headers: :any, methods: :any, expose: %w[access-token client uid expiry]
+      end
+    else
+      allow do
+        origins '*'
+        resource '*', headers: :any, methods: :any, expose: %w[access-token client uid expiry]
+      end
     end
   end
 
-  if ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_API_CORS', false)) &&
-     smartworkrd_origin.blank?
-    allow do
-      origins '*'
-      resource '/api/*',
-               headers: :any,
-               methods: :any,
-               expose: %w[access-token client uid expiry]
+  if ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_API_CORS', false))
+    if smartworkrd_origin.present?
+      allow do
+        origins smartworkrd_origin
+        resource '/api/*',
+                 headers: :any,
+                 methods: :any,
+                 expose: %w[access-token client uid expiry]
+      end
+    else
+      allow do
+        origins '*'
+        resource '/api/*',
+                 headers: :any,
+                 methods: :any,
+                 expose: %w[access-token client uid expiry]
+      end
     end
   end
 
   if smartworkrd_origin.present?
     allow do
       origins smartworkrd_origin
-      # The embedded inbox calls Chatwoot's authenticated API directly from
-      # the CRM origin, so API CORS must be enabled whenever the integration
-      # origin is configured (not only when the optional global API flag is on).
-      resource '/api/*',
-               headers: :any,
-               methods: :any,
-               expose: %w[access-token client uid expiry]
       resource '/smartworkrd/sso/consume',
                headers: :any,
                methods: [:post, :options]
